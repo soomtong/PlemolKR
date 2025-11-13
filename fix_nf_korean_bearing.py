@@ -40,15 +40,19 @@ def fix_korean_bearing(font_path, verbose=False):
         return (0, 0, f"Failed to open: {e}")
 
     try:
-        # 반각 폭 확인 (숫자 '0' 기준)
-        if 0x0030 not in font:
-            return (0, 0, "Missing U+0030 (digit 0)")
-
-        half_width = font[0x0030].width
-        target_width = half_width * 2
-
-        if verbose:
-            print(f"    Half-width: {half_width}, Target full-width: {target_width}")
+        # 전각 폭 확인 (히라가나 'あ' 기준 - fontforge_script.py와 동일)
+        if 0x3042 not in font:
+            # 히라가나가 없으면 숫자 '0' 기준으로 계산
+            if 0x0030 not in font:
+                return (0, 0, "Missing U+3042 (hiragana 'あ') and U+0030 (digit '0')")
+            half_width = font[0x0030].width
+            target_width = half_width * 2
+            if verbose:
+                print(f"    Using digit '0' as reference: half={half_width}, target={target_width}")
+        else:
+            target_width = font[0x3042].width
+            if verbose:
+                print(f"    Using hiragana 'あ' as reference: target_width={target_width}")
 
         fixed_count = 0
         skipped_count = 0
@@ -58,8 +62,8 @@ def fix_korean_bearing(font_path, verbose=False):
             if (0xAC00 <= glyph.unicode <= 0xD7A3 or
                 0x3131 <= glyph.unicode <= 0x318E):
 
-                # 전각으로 추정되는 글리프만 처리 (width 조건 완화)
-                if glyph.width > half_width:
+                # fontforge_script.py와 동일한 조건: width == target_width
+                if glyph.width == target_width:
                     # bbox 기반 중앙 정렬 재적용
                     bbox = glyph.boundingBox()
                     actual_width = bbox[2] - bbox[0]
@@ -71,10 +75,8 @@ def fix_korean_bearing(font_path, verbose=False):
                     # 중앙 정렬을 위한 offset 계산
                     offset = (target_width - actual_width) / 2 - bbox[0]
 
-                    # bearing이 이미 중앙 정렬된 경우 (±2px 허용) skip
-                    if abs(current_lsb - current_rsb) <= 2 and abs(glyph.width - target_width) <= 2:
-                        skipped_count += 1
-                        continue
+                    # Skip 조건 제거: FontPatcher 후에는 무조건 재조정
+                    # (FontForge mergeFonts()가 bearing을 손상시키므로)
 
                     # 변환 적용
                     glyph.transform(psMat.translate(offset, 0))
@@ -86,6 +88,10 @@ def fix_korean_bearing(font_path, verbose=False):
                         new_lsb = new_bbox[0]
                         new_rsb = glyph.width - new_bbox[2]
                         print(f"      U+{glyph.unicode:04X}: LSB {current_lsb:.1f}→{new_lsb:.1f}, RSB {current_rsb:.1f}→{new_rsb:.1f}")
+                elif verbose and glyph.width != target_width:
+                    # 디버그: width가 target_width와 다른 글리프 보고
+                    print(f"      U+{glyph.unicode:04X}: width={glyph.width} != target={target_width} (skipped)")
+                    skipped_count += 1
 
         # 폰트 저장
         font.generate(font_path)
