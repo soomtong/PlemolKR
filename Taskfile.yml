@@ -202,15 +202,16 @@ tasks:
       - ls -lh build/PlemolKR*.ttf | grep -v fontforge | grep -v fonttools
 
   full:nerd:
-    desc: Nerd Fonts 포함 전체 빌드
+    desc: Nerd Fonts 포함 전체 빌드 (FontPatcher 사용)
     cmds:
       - echo "🚀 Nerd Fonts 전체 빌드 시작..."
       - task clean
-      - task build:console-nf
-      - task build:console-nf35
+      - task build:console
+      - task build:console35
       - task polish
+      - task patch:nerd:all
       - echo "✅ Nerd Fonts 전체 빌드 완료!"
-      - ls -lh build/PlemolKR*.ttf | grep -v fontforge | grep -v fonttools
+      - ls -lh build/nerd/*.ttf 2>/dev/null || echo "생성된 폰트가 없습니다"
 
   # ============================================
   # 빠른 빌드 (디버그)
