@@ -116,7 +116,7 @@ tasks:
           echo "🔧 패치 중: $font → PlemolKRConsole-$variation.ttf"
           mkdir -p build/nerd/tmp
           fontforge --script FontPatcher/font-patcher \
-            --complete --careful --mono \
+            --complete --careful --single-width-glyphs \
             --outputdir build/nerd/tmp \
             "$font" 2>&1 | grep -v "^Copyright" | grep -v "^$" || true
           # 생성된 파일을 원하는 이름으로 변경
@@ -143,7 +143,7 @@ tasks:
           echo "🔧 패치 중: $font → PlemolKR35Console-$variation.ttf"
           mkdir -p build/nerd/tmp
           fontforge --script FontPatcher/font-patcher \
-            --complete --careful --mono \
+            --complete --careful --single-width-glyphs \
             --outputdir build/nerd/tmp \
             "$font" 2>&1 | grep -v "^Copyright" | grep -v "^$" || true
           # 생성된 파일을 원하는 이름으로 변경
